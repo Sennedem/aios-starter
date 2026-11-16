@@ -14,28 +14,38 @@ It is a folder of plain files. There is no app and no server, and nothing leaves
 
 ## Install
 
-You need [Claude Code](https://claude.com/claude-code), git and Node 18 or newer. [Obsidian](https://obsidian.md) is free and optional; setup offers to install it for you.
+You need [Claude Code](https://claude.com/claude-code) in any form (the Claude desktop app, the VS Code extension or the terminal command), git, and Node 18 or newer. [Obsidian](https://obsidian.md) is free and optional; setup offers to install it for you.
 
-1. Click **Use this template** at the top of this page and create your own repository. Make it **private**: your brain will hold personal notes.
-2. Clone your new repository and check the machine:
+### 1. Get the files
 
-   ```bash
-   git clone https://github.com/<you>/<your-repo>.git aios
-   cd aios
-   node scripts/doctor.mjs
-   ```
+The quickest way needs no GitHub login. Open a terminal (Terminal on macOS, PowerShell on Windows) in the folder where you want it, for example Documents:
 
-   The check reports what is missing and prints the Obsidian install command for your system (`winget` on Windows, `brew` on macOS, `flatpak` on Linux).
+```bash
+git clone https://github.com/Sennedem/aios-starter.git aios
+```
 
-3. Start Claude Code in that folder and say anything:
+This creates a folder called `aios`. Setup later disconnects it from this public repository and offers you a private backup of your own.
 
-   ```bash
-   claude "start"
-   ```
+If you would like your own repository from the start: click **Use this template** at the top of this page, create the repository as **private** (your brain will hold personal notes), and clone that one. Cloning a private repository asks you to log in. Your GitHub password does not work there, so log in once with the [GitHub CLI](https://cli.github.com) (`gh auth login`) or use GitHub Desktop.
 
-Setup begins with the first message. You do not have to configure anything first.
+### 2. Open the folder in Claude Code and say "start"
 
-If you cloned this repository directly instead of using the template button, that works too. Setup notices that `origin` points at the public starter, removes it on your yes, and offers a private backup at the end.
+| You use | Do this |
+|---|---|
+| The Claude desktop app | Open the Code tab, start a session on the `aios` folder (running locally on your machine) and type `start` |
+| VS Code | Open the `aios` folder, open the Claude Code panel and type `start` |
+| The terminal | `cd aios`, then `claude "start"`. The `claude` command is its own install and does not come with the desktop app |
+
+Setup begins with the first message. You do not have to configure anything first. If Claude answers like a normal chat, the session is not opened on the `aios` folder.
+
+### 3. Optional: check the machine
+
+```bash
+cd aios
+node scripts/doctor.mjs
+```
+
+It reports what is missing and prints the Obsidian install command for your system (`winget` on Windows, `brew` on macOS, `flatpak` on Linux). Setup runs the same check for you.
 
 ## What the first run does
 
