@@ -1,0 +1,76 @@
+# --- OS and cloud-sync cruft ---
+desktop.ini
+.DS_Store
+Thumbs.db
+
+# --- Obsidian: the vault is brain/ and its .obsidian config IS tracked (it travels to other
+#     machines). Per-machine editor state is not. Ignore a stray root-level vault too. ---
+/.obsidian/
+brain/.obsidian/workspace*.json
+brain/.obsidian/cache
+
+# --- Secrets and env (never commit) ---
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+.credentials.json
+secrets/
+
+# --- Per-machine Claude Code files ---
+.claude/settings.local.json
+CLAUDE.local.md
+.playwright-mcp/
+
+# --- Scratch and build caches ---
+tmp/
+**/node_modules/
+**/.cache/
+**/dist/
+**/build/
+**/.venv/
+**/__pycache__/
+
+# --- Generated dashboard data ---
+dashboard/data.js
+
+# --- Heavy media and office binaries (these belong in cloud storage, not in git) ---
+*.mp4
+*.mov
+*.webm
+*.mkv
+*.mp3
+*.wav
+*.m4a
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.pdf
+*.pptx
+*.ppt
+*.docx
+*.doc
+*.xlsx
+*.xls
+*.zip
+*.7z
+*.rar
+
+# Images used by brain notes travel with the notes.
+!brain/attachments/
+!brain/attachments/**
+
+# --- Inbox drop zone: files land here and Claude files them; only the README is tracked ---
+inbox/*
+!inbox/README.md
+
+# --- Cloud-doc pointer files (the real content lives online) ---
+*.gdoc
+*.gsheet
+*.gslides
+*.gform
+*.gdraw

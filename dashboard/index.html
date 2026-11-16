@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AIOS dashboard</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- ambient layers -->
+    <div class="mesh" aria-hidden="true">
+      <span class="orb orb-1"></span>
+      <span class="orb orb-2"></span>
+    </div>
+    <div class="scanline" aria-hidden="true"></div>
+    <div class="hud-brackets" aria-hidden="true"></div>
+
+    <!-- top bar -->
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">&#9698;</span>
+        <div>
+          <h1 class="brand-name">AIOS <span class="sep">//</span> HUD</h1>
+          <p class="brand-sub">Personal command interface</p>
+        </div>
+      </div>
+      <div class="status-cluster">
+        <div class="clock">
+          <span id="clock" class="clock-time">--:--:--</span>
+          <span id="date" class="clock-date">&nbsp;</span>
+        </div>
+      </div>
+    </header>
+
+    <div id="setup-banner" class="setup-banner" hidden></div>
+
+    <!-- grid -->
+    <main class="grid">
+      <!-- system health: latest audit + janitor report -->
+      <section class="panel core" aria-labelledby="core-h">
+        <div class="panel-head">
+          <h2 class="eyebrow" id="core-h">System health</h2>
+          <span class="idx">// 00</span>
+        </div>
+        <div class="reactor">
+          <svg class="reactor-svg" viewBox="0 0 200 200" aria-hidden="true">
+            <circle class="ring ring-outer" cx="100" cy="100" r="92" />
+            <circle class="ring ring-mid" cx="100" cy="100" r="74" />
+            <circle class="ring ring-inner" cx="100" cy="100" r="54" />
+            <circle class="reactor-track" cx="100" cy="100" r="38" />
+            <circle class="reactor-fill" cx="100" cy="100" r="38" id="reactor-arc" />
+          </svg>
+          <div class="reactor-center">
+            <span class="reactor-value" id="health-overall">--</span>
+            <span class="reactor-unit" id="health-unit">no audit yet</span>
+          </div>
+        </div>
+        <div class="cees" id="cees"></div>
+        <div class="reports" id="reports"></div>
+      </section>
+
+      <!-- deadlines -->
+      <section class="panel deadlines" aria-labelledby="dl-h">
+        <div class="panel-head">
+          <h2 class="eyebrow" id="dl-h">Deadlines</h2>
+          <span class="idx">// 01</span>
+        </div>
+        <div class="dl-list" id="deadlines"></div>
+      </section>
+
+      <!-- tasks -->
+      <section class="panel tasks" aria-labelledby="tk-h">
+        <div class="panel-head">
+          <h2 class="eyebrow" id="tk-h">Tasks &amp; progress</h2>
+          <span class="idx">// 02</span>
+        </div>
+        <div class="task-list" id="tasks"></div>
+      </section>
+
+      <!-- cadence -->
+      <section class="panel cadence" aria-labelledby="cd-h">
+        <div class="panel-head">
+          <h2 class="eyebrow" id="cd-h">Cadence due</h2>
+          <span class="idx">// 03</span>
+        </div>
+        <div class="cadence-list" id="cadence"></div>
+      </section>
+
+      <!-- projects + priorities -->
+      <section class="panel status" aria-labelledby="st-h">
+        <div class="panel-head">
+          <h2 class="eyebrow" id="st-h">Projects &amp; priorities</h2>
+          <span class="idx">// 04</span>
+        </div>
+        <div class="project-list" id="projects"></div>
+        <div class="prio-block">
+          <span class="mini-label">Priority order</span>
+          <ol class="prio-list" id="priorities"></ol>
+        </div>
+      </section>
+    </main>
+
+    <!-- footer -->
+    <footer class="statusbar">
+      <span id="gen-info" class="gen-info">&nbsp;</span>
+      <span class="gen-hint">Refresh: <code>node dashboard/build-data.mjs</code> or <code>/dashboard</code></span>
+    </footer>
+
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

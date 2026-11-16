@@ -1,0 +1,59 @@
+name: Brain janitor
+
+# Deterministic lint of the brain and the OS ledgers (scripts/brain-janitor.mjs).
+# No LLM, no API calls, no secrets beyond the default GITHUB_TOKEN. Writes
+# brain/audits/janitor-latest.md so /audit reads counts instead of re-deriving them,
+# and so hand edits made in Obsidian (no Claude session, no SessionEnd hook) still get linted.
+# The janitor's local runs write elsewhere (tmp/); this workflow is the report's only
+# writer, because two writers of one file conflict on every rebase.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "brain/**"
+      - "!brain/.obsidian/**"   # editor state changes often and needs no lint
+      - "tasks.yaml"
+      - "cadence.md"
+      - ".claude/skills/**/SKILL.md"
+      - ".claude/agents/*.md"
+      - "scripts/brain-janitor.mjs"
+  workflow_dispatch:
+
+concurrency:
+  group: brain-janitor
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    # Skip when the janitor's own commit was the push.
+    if: "${{ github.event_name != 'push' || !contains(github.event.head_commit.message, 'chore: brain janitor') }}"
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the drift check needs history
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run janitor
+        run: node scripts/brain-janitor.mjs --quiet
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add brain/audits/janitor-latest.md
+          git diff --staged --quiet && echo "no changes" && exit 0
+          git commit -m "chore: brain janitor $(date -u +%Y-%m-%dT%H:%MZ)"
+          # The SessionEnd backup hook also pushes this repo; retry the race.
+          for i in 1 2 3; do
+            git pull --rebase --autostash && git push && exit 0
+            sleep $((i * 10))
+          done
+          echo "push failed after 3 attempts" >&2
+          exit 1

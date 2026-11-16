@@ -1,0 +1,11 @@
+{
+  "alwaysUpdateLinks": true,
+  "newLinkFormat": "absolute",
+  "newFileLocation": "current",
+  "attachmentFolderPath": "attachments",
+  "useMarkdownLinks": false,
+  "showInlineTitle": true,
+  "defaultViewMode": "preview",
+  "tabSize": 4,
+  "showUnsupportedFiles": true
+}

@@ -1,0 +1,214 @@
+# -*- coding: utf-8 -*-
+"""
+forensics.py: pre-submission file-provenance scanner for the /review-deliverable skill.
+
+Reads Office Open XML files (.docx / .xlsx / .pptx) and reports machine-generation
+fingerprints that a grader (or anyone opening File -> Properties) can see. It only
+REPORTS. Severity and the written-up issue log are the model's job (see SKILL.md):
+graded work -> fingerprints are CRITICAL; business/personal -> informational only.
+
+Core metadata + embedded-media scan uses only the Python standard library (zipfile,
+re), so it runs on any of the three formats with zero dependencies. Formula-vs-hardcoded
+coverage for .xlsx additionally uses openpyxl if it is installed; if not, that one
+section is skipped gracefully. Paths are taken from the command line; works on any OS.
+
+Usage:
+    python forensics.py "<file1>" ["<file2>" ...]
+"""
+import sys, io, os, re, zipfile
+
+# UTF-8 stdout on Windows consoles
+try:
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+except Exception:
+    pass
+
+# Substrings in creator / Application that prove a script (not a human app) wrote the file.
+SCRIPT_FINGERPRINTS = ["openpyxl", "python-docx", "python-pptx", "libreoffice",
+                       "reportlab", "pandas", "xlsxwriter", "docx4j", "apache poi"]
+# Substrings in embedded image bytes that reveal a plotting/imaging library.
+MEDIA_FINGERPRINTS = ["matplotlib", "plotly", "seaborn", "pillow", "python pillow",
+                      "cairo", "ghostscript", "gnuplot", "imagemagick"]
+
+CORE_TAGS = ["dc:creator", "cp:lastModifiedBy", "dcterms:created", "dcterms:modified", "cp:revision"]
+APP_TAGS  = ["Application", "AppVersion", "Company", "TotalTime", "Pages", "Words", "Slides", "Paragraphs"]
+
+
+def _read_xml(z, part):
+    try:
+        return z.read(part).decode("utf-8", "ignore") if part in z.namelist() else ""
+    except Exception:
+        return ""
+
+
+def _tag(xml, tag):
+    m = re.search(r"<%s[^>]*>(.*?)</%s>" % (re.escape(tag), re.escape(tag)), xml)
+    return m.group(1).strip() if m else None
+
+
+def scan_metadata(z):
+    core = _read_xml(z, "docProps/core.xml")
+    app = _read_xml(z, "docProps/app.xml")
+    meta = {}
+    for t in CORE_TAGS:
+        v = _tag(core, t)
+        if v is not None:
+            meta[t] = v
+    for t in APP_TAGS:
+        v = _tag(app, t)
+        if v is not None:
+            meta[t] = v
+    return meta
+
+
+def scan_media(z):
+    """Return list of (mediapath, fingerprint-or-None) for embedded images."""
+    out = []
+    for n in z.namelist():
+        low = n.lower()
+        if "/media/" in low and low.rsplit(".", 1)[-1] in ("png", "jpg", "jpeg", "emf", "wmf", "svg", "tif", "tiff"):
+            try:
+                data = z.read(n)
+            except Exception:
+                continue
+            text = data[:4096].decode("latin-1", "ignore").lower() + data[-2048:].decode("latin-1", "ignore").lower()
+            hit = next((fp for fp in MEDIA_FINGERPRINTS if fp in text), None)
+            out.append((n, hit))
+    return out
+
+
+def scan_xlsx_formulas(path):
+    """(formula_cells, hardcoded_number_cells, per_sheet_rows) or None if openpyxl missing."""
+    try:
+        import openpyxl
+    except Exception:
+        return None
+    try:
+        wb = openpyxl.load_workbook(path, data_only=False, read_only=True)
+    except Exception as e:
+        return ("ERR", str(e), [])
+    f_tot = n_tot = 0
+    rows = []
+    for ws in wb.worksheets:
+        nf = nn = 0
+        for row in ws.iter_rows():
+            for c in row:
+                v = c.value
+                if v is None:
+                    continue
+                if isinstance(v, str) and v.startswith("="):
+                    nf += 1
+                elif isinstance(v, (int, float)) and not isinstance(v, bool):
+                    nn += 1
+        f_tot += nf; n_tot += nn
+        rows.append((ws.title, nf, nn))
+    return (f_tot, n_tot, rows)
+
+
+def analyze(path):
+    print("=" * 78)
+    print("FILE:", path)
+    print("=" * 78)
+    if not os.path.exists(path):
+        print("  !! file not found")
+        return
+    ext = path.lower().rsplit(".", 1)[-1] if "." in path else ""
+    if ext not in ("docx", "xlsx", "pptx"):
+        print(f"  (unsupported extension .{ext}; this scanner handles .docx/.xlsx/.pptx)")
+        return
+    try:
+        z = zipfile.ZipFile(path)
+    except Exception as e:
+        print("  !! not a valid Office Open XML file:", e)
+        return
+
+    meta = scan_metadata(z)
+    print("\n-- metadata --")
+    for k in CORE_TAGS + APP_TAGS:
+        if k in meta:
+            print(f"   {k:18} = {meta[k]!r}")
+
+    findings = []
+
+    # 1) script-authored?
+    creator = (meta.get("dc:creator", "") or "").lower()
+    app = (meta.get("Application", "") or "").lower()
+    for blob, label in ((creator, "Author"), (app, "Application")):
+        for fp in SCRIPT_FINGERPRINTS:
+            if fp in blob:
+                findings.append(f"{label} field contains '{fp}' -> file was generated by a script, not the native app")
+
+    # 2) near-zero edit time vs size
+    tt = meta.get("TotalTime")
+    words = meta.get("Words") or meta.get("Slides") or meta.get("Pages")
+    if tt is not None:
+        try:
+            tti = int(tt)
+            wi = int(words) if words and str(words).isdigit() else None
+            if ext == "docx" and tti <= 5 and wi and wi > 1500:
+                findings.append(f"TotalTime={tti} min for ~{wi} words -> implausibly low editing time (assembled, barely opened in app)")
+            elif ext == "docx" and tti == 0 and wi and wi > 500:
+                findings.append(f"TotalTime=0 min for ~{wi} words -> no human editing time recorded")
+        except Exception:
+            pass
+
+    # 3) revision sanity (very high revision with ~0 edit time is itself odd)
+    rev = meta.get("cp:revision")
+    if rev and tt is not None:
+        try:
+            if int(rev) > 100 and int(tt) <= 5:
+                findings.append(f"revision={rev} but TotalTime={tt} min -> revision/edit-time mismatch typical of programmatic saves")
+        except Exception:
+            pass
+
+    # 4) embedded media library tags
+    media = scan_media(z)
+    tagged = [(n, h) for (n, h) in media if h]
+    if tagged:
+        for n, h in tagged:
+            findings.append(f"embedded image {os.path.basename(n)} carries a '{h}' software tag -> chart/figure rendered by a library, not the native app")
+
+    # 5) xlsx formula coverage
+    if ext == "xlsx":
+        fc = scan_xlsx_formulas(path)
+        if fc is None:
+            print("\n-- formula coverage -- (openpyxl not installed; skipped)")
+        elif fc[0] == "ERR":
+            print("\n-- formula coverage -- error:", fc[1])
+        else:
+            f_tot, n_tot, rows = fc
+            print("\n-- formula coverage --")
+            for title, nf, nn in rows:
+                print(f"   {title:24} formulas={nf:4}  hardcoded-numbers={nn:4}")
+            tot = f_tot + n_tot
+            pct = (f_tot / tot * 100) if tot else 0
+            print(f"   {'TOTAL':24} formulas={f_tot:4}  hardcoded-numbers={n_tot:4}  ({pct:.0f}% live formulas)")
+            if tot and pct < 25:
+                findings.append(f"only {pct:.0f}% of numeric cells are live formulas -> model is mostly typed/pasted values, not a built model")
+
+    print("\n-- FINDINGS --")
+    if findings:
+        for f in findings:
+            print("   [FLAG]", f)
+    else:
+        print("   none: no machine-generation fingerprints detected in metadata/media")
+    z.close()
+
+
+def main(argv):
+    files = argv[1:]
+    if not files:
+        print("usage: python forensics.py \"<file1>\" [\"<file2>\" ...]")
+        return 1
+    for p in files:
+        analyze(p)
+        print()
+    print("NOTE: this scanner reports provenance only. Severity is context-dependent:")
+    print("for graded/academic work these flags are CRITICAL; for business/personal work")
+    print("they are informational. The AI-transparency declaration cannot be auto-detected;")
+    print("confirm it separately (see SKILL.md / forensic-checklist.md).")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv))
