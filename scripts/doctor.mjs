@@ -159,7 +159,8 @@ function report() {
   console.log(`  ${mark(git.ok)} git${git.ok ? '' : ' (no backups or history until it is installed)'}`);
   console.log(`  ${mark(gh.ok && ghAuth.ok)} GitHub CLI${gh.ok ? (ghAuth.ok ? '' : ' (installed, run: gh auth login)') : ' (optional, needed for the private backup)'}`);
   console.log(`  ${mark(obsidian)} Obsidian${obsidian ? '' : `  install with: ${result.obsidian.installCommand}   or download from https://obsidian.md`}`);
-  console.log(`  ${isRepo ? 'ok     ' : 'note   '} ${isRepo ? remoteNote : 'Not a git repository yet. Run: git init'}`);
+  const remoteOk = isRepo && (remote === 'private' || remote === 'none');
+  console.log(`  ${remoteOk ? 'ok     ' : 'note   '} ${isRepo ? remoteNote : 'Not a git repository yet. Run: git init'}`);
   console.log(`  vault   ${brain}`);
   console.log(`  setup   ${result.setupDone ? 'done' : 'not done yet. Start Claude Code here and say: start'}`);
   return 0;
