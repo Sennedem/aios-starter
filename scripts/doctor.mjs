@@ -5,6 +5,7 @@
 //   node scripts/doctor.mjs --json            same, as JSON
 //   node scripts/doctor.mjs --register-vault  add brain/ to Obsidian's vault list (close Obsidian first)
 //   node scripts/doctor.mjs --open-vault      open the brain vault in Obsidian
+//   node scripts/doctor.mjs --open-page       open docs/how-it-works.html in the default browser
 //
 // It never installs anything. It prints the install command for this system and the
 // setup skill runs it after the user says yes.
@@ -52,6 +53,34 @@ function obsidianInstallCommand() {
   if (os === 'win32') return 'winget install -e --id Obsidian.Obsidian';
   if (os === 'darwin') return 'brew install --cask obsidian';
   return 'flatpak install -y flathub md.obsidian.Obsidian';
+}
+
+function installCommands() {
+  if (os === 'win32') return {
+    git: 'winget install -e --id Git.Git',
+    node: 'winget install -e --id OpenJS.NodeJS.LTS',
+    gh: 'winget install -e --id GitHub.cli',
+  };
+  if (os === 'darwin') return {
+    git: 'xcode-select --install   (or: brew install git)',
+    node: 'brew install node',
+    gh: 'brew install gh',
+  };
+  return {
+    git: 'sudo apt install -y git   (or the package manager of your distribution)',
+    node: 'sudo apt install -y nodejs npm   (needs version 18 or newer; nodejs.org has current builds)',
+    gh: 'sudo apt install -y gh   (or see cli.github.com)',
+  };
+}
+
+function openPage() {
+  const page = join(root, 'docs', 'how-it-works.html');
+  if (!existsSync(page)) { console.log(`Not found: ${page}`); return 1; }
+  const r = os === 'win32'
+    ? run('cmd', ['/c', 'start', '""', page])
+    : os === 'darwin' ? run('open', [page]) : run('xdg-open', [page]);
+  console.log(r.ok ? `Opened ${page} in your browser.` : `Could not open it automatically. Open this file in your browser: ${page}`);
+  return r.ok ? 0 : 1;
 }
 
 function obsidianConfigPath() {
@@ -114,6 +143,7 @@ function report() {
   const ghAuth = gh.ok ? run('gh', ['auth', 'status']) : { ok: false };
   const isRepo = git.ok && run('git', ['rev-parse', '--is-inside-work-tree']).ok;
   const origin = isRepo ? run('git', ['remote', 'get-url', 'origin']) : { ok: false, out: '' };
+  const upstream = isRepo ? run('git', ['remote', 'get-url', 'upstream']) : { ok: false, out: '' };
 
   let remote = 'none';
   let remoteNote = 'No origin remote. Setup offers a private backup at the end.';
@@ -144,6 +174,8 @@ function report() {
     gitRepo: isRepo,
     remote,
     obsidian: { installed: obsidian, installCommand: obsidianInstallCommand(), config: obsidianConfigPath() },
+    install: installCommands(),
+    upstream: upstream.ok && STARTER.test(upstream.out),
     brain,
     setupDone: existsSync(join(root, '.aios-setup-done')),
   };
@@ -154,13 +186,15 @@ function report() {
   }
 
   const mark = (ok) => (ok ? 'ok     ' : 'MISSING');
+  const cmds = result.install;
   console.log('AIOS machine check');
-  console.log(`  ${mark(result.node.ok)} Node ${result.node.version}${result.node.ok ? '' : ' (needs 18 or newer, the hooks will not run)'}`);
-  console.log(`  ${mark(git.ok)} git${git.ok ? '' : ' (no backups or history until it is installed)'}`);
-  console.log(`  ${mark(gh.ok && ghAuth.ok)} GitHub CLI${gh.ok ? (ghAuth.ok ? '' : ' (installed, run: gh auth login)') : ' (optional, needed for the private backup)'}`);
+  console.log(`  ${mark(result.node.ok)} Node ${result.node.version}${result.node.ok ? '' : `  (needs 18 or newer, the hooks will not run)  install with: ${cmds.node}`}`);
+  console.log(`  ${mark(git.ok)} git${git.ok ? '' : `  (no backups or history until it is installed)  install with: ${cmds.git}`}`);
+  console.log(`  ${mark(gh.ok && ghAuth.ok)} GitHub CLI${gh.ok ? (ghAuth.ok ? '' : ' (installed, run: gh auth login)') : `  (needed for the private backup)  install with: ${cmds.gh}`}`);
   console.log(`  ${mark(obsidian)} Obsidian${obsidian ? '' : `  install with: ${result.obsidian.installCommand}   or download from https://obsidian.md`}`);
   const remoteOk = isRepo && (remote === 'private' || remote === 'none');
   console.log(`  ${remoteOk ? 'ok     ' : 'note   '} ${isRepo ? remoteNote : 'Not a git repository yet. Run: git init'}`);
+  if (isRepo) console.log(`  ${result.upstream ? 'ok     ' : 'note   '} ${result.upstream ? 'upstream points at the starter (fetch-only): /update-aios can pull improvements' : 'no upstream remote yet: setup adds it, and /update-aios adds it when missing'}`);
   console.log(`  vault   ${brain}`);
   console.log(`  setup   ${result.setupDone ? 'done' : 'not done yet. Start Claude Code here and say: start'}`);
   return 0;
@@ -169,5 +203,6 @@ function report() {
 let code = 0;
 if (args.has('--register-vault')) code = registerVault();
 else if (args.has('--open-vault')) code = openVault();
+else if (args.has('--open-page')) code = openPage();
 else code = report();
 process.exit(code);

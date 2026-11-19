@@ -1,15 +1,15 @@
 ---
 type: log
 status: active
-updated: 2026-11-16
+updated: 2026-11-19
 domain: meta
 parent: "[[audits/README|Audits]]"
 tags: [janitor, lint]
 ---
 
-# Brain janitor, 2026-11-16
+# Brain janitor, 2026-11-19
 
-Deterministic lint by `scripts/brain-janitor.mjs` (repo-only run). Overwritten on every run; `/audit` quotes these counts instead of re-deriving them. Scope: 17 brain pages, 0 projects, 21 skills.
+Deterministic lint by `scripts/brain-janitor.mjs` (repo-only run). Overwritten on every run; `/audit` quotes these counts instead of re-deriving them. Scope: 180 brain pages, 0 projects, 25 skills.
 
 ## Summary
 
@@ -79,7 +79,7 @@ _Unlinked pages elsewhere in the brain (informational, 0): none_
 
 - none
 
-## OS: tasks.yaml past deadline, not done
+## OS: open tasks past their date (project Next sections)
 
 - none
 

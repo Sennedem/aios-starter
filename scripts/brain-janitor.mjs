@@ -16,7 +16,7 @@
  * from the brain/README.md index, frontmatter (parent/updated/type/status/domain enums),
  * stale updated: on the content layer, updated: older than the git last-commit date,
  * TBD/TODO markers, wiki pages missing from wiki/README.md, duplicate wiki ingests.
- * Checks (OS): tasks.yaml past-due, cadence.md rows due, skill and agent frontmatter,
+ * Checks (OS): past-due open tasks in project CONTEXT.md "Next" sections, cadence.md rows due, skill and agent frontmatter,
  * skill references to scripts/ files that do not exist.
  *
  * The domain enum is derived from the folder names under brain/projects/, plus wiki and meta.
@@ -115,15 +115,15 @@ function walk(dir, list = []) {
 function readPage(f) {
   let raw = fs.readFileSync(f, 'utf8');
   if (raw.charCodeAt(0) === 0xfeff) raw = raw.slice(1);
-  const nl = raw.replace(/\r\n/g, '\n');
+  const norm = raw.replace(/\r\n/g, '\n');
   const fm = {};
-  let body = nl;
+  let body = norm;
   let hasFm = false;
-  if (nl.startsWith('---\n')) {
-    const end = nl.indexOf('\n---', 3);
+  if (norm.startsWith('---\n')) {
+    const end = norm.indexOf('\n---', 3);
     if (end > -1) {
       hasFm = true;
-      const fmLines = nl.slice(4, end).split('\n');
+      const fmLines = norm.slice(4, end).split('\n');
       for (let i = 0; i < fmLines.length; i++) {
         const m = /^([A-Za-z_][\w-]*):\s*(.*)$/.exec(fmLines[i]);
         if (!m) continue;
@@ -135,11 +135,11 @@ function readPage(f) {
         }
         fm[m[1]] = v.replace(/^["']|["']$/g, '');
       }
-      const endNl = nl.indexOf('\n', end + 1);
-      body = endNl > -1 ? nl.slice(endNl + 1) : '';
+      const endNl = norm.indexOf('\n', end + 1);
+      body = endNl > -1 ? norm.slice(endNl + 1) : '';
     }
   }
-  return { fm, body, hasFm, text: nl };
+  return { fm, body, hasFm, text: norm };
 }
 
 // Wikilinks: [[target]], [[target|alias]], [[target\|alias]], [[target#heading]]
@@ -325,26 +325,22 @@ for (const [r, p] of pages) {
 for (const [k, rs] of bySource) if (rs.length > 1) findings.dupIngest.push(`${k.slice(4)}: ${rs.join(', ')}`);
 
 // ---- scan OS ---------------------------------------------------------------
-const tasksPath = path.join(ROOT, 'tasks.yaml');
-if (fs.existsSync(tasksPath)) {
+// Open tasks live in each project's CONTEXT.md under a "## Next" heading, one "- [ ]" line each.
+// A line that carries a date (YYYY-MM-DD) earlier than today and is not ticked is past due.
+for (const slug of PROJECT_SLUGS) {
+  const ctx = path.join(PROJECTS_DIR, slug, 'CONTEXT.md');
+  if (!fs.existsSync(ctx)) continue;
   try {
-    const y = fs.readFileSync(tasksPath, 'utf8').replace(/\r\n/g, '\n');
-    let cur = null;
-    const clean = v => v.replace(/\s+#.*$/, '').trim().replace(/^["']|["']$/g, '');
-    const flush = () => {
-      if (!cur || !cur.title || !cur.deadline || cur.status === 'done') return;
-      const d = parseDate(cur.deadline);
-      if (d && daysBetween(d, todayUtc) > 0) findings.tasks.push(`${cur.title}: ${cur.status || 'todo'} ${cur.progress ?? '?'}%, deadline ${cur.deadline} (${daysBetween(d, todayUtc)}d ago)${cur.example === 'true' ? ' [example task]' : ''}`);
-    };
-    for (const line of y.split('\n')) {
-      if (/^\s*#/.test(line) || !line.trim()) continue;
-      const m = /^-\s+(\w+):\s*(.*)$/.exec(line);
-      if (m) { flush(); cur = { [m[1]]: clean(m[2]) }; continue; }
-      const kv = /^\s+(\w+):\s*(.*)$/.exec(line);
-      if (kv && cur) cur[kv[1]] = clean(kv[2]);
+    const body = fs.readFileSync(ctx, 'utf8').replace(/\r\n/g, '\n');
+    const m = /^##\s+Next\b[^\n]*\n([\s\S]*?)(?=^##\s|(?![\s\S]))/m.exec(body);
+    if (!m) continue;
+    for (const line of m[1].split('\n')) {
+      if (!/^\s*-\s*\[ \]/.test(line)) continue;
+      const dm = /(\d{4}-\d{2}-\d{2})/.exec(line);
+      const d = dm && parseDate(dm[1]);
+      if (d && daysBetween(d, todayUtc) > 0) findings.tasks.push(`${slug}: ${line.replace(/^\s*-\s*\[ \]\s*/, '').trim()} (${daysBetween(d, todayUtc)}d ago)`);
     }
-    flush();
-  } catch { findings.tasks.push('tasks.yaml unreadable'); }
+  } catch { findings.tasks.push(`projects/${slug}/CONTEXT.md unreadable`); }
 }
 
 const cadencePath = path.join(ROOT, 'cadence.md');
@@ -464,7 +460,7 @@ lines.push(`## Stale content pages (updated: more than ${STALE_DAYS} days ago, o
 lines.push('## Frontmatter drift (updated: older than the git last commit)', '', list(findings.drift.map(d => `${d.r}: updated ${d.updated}, last commit ${d.git} (${d.days}d)`), 30), '');
 lines.push('## Open / TBD markers (content layer)', '', list(findings.markers), '');
 lines.push('## Duplicate wiki ingests (same source URL)', '', list(findings.dupIngest), '');
-lines.push('## OS: tasks.yaml past deadline, not done', '', list(findings.tasks), '');
+lines.push('## OS: open tasks past their date (project Next sections)', '', list(findings.tasks), '');
 lines.push('## OS: cadence rows due today, overdue or never run', '', list(findings.cadence), '');
 lines.push('## OS: skill frontmatter and script references', '', list(findings.skills), '');
 lines.push('## OS: agent frontmatter', '', list(findings.agents), '');

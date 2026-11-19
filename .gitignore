@@ -33,9 +33,6 @@ tmp/
 **/.venv/
 **/__pycache__/
 
-# --- Generated dashboard data ---
-dashboard/data.js
-
 # --- Heavy media and office binaries (these belong in cloud storage, not in git) ---
 *.mp4
 *.mov

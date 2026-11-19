@@ -9,7 +9,7 @@ Read-only. Scan the OS and the brain, score it, and name the 3 highest-leverage 
 
 ## What to scan
 
-- OS: `CLAUDE.md`, `connections.md`, `cadence.md`, `tasks.yaml`, `otherworlds/*`.
+- OS: `CLAUDE.md`, `connections.md`, `cadence.md`, `otherworlds/*`.
 - Brain: `brain/context/*`, each `brain/projects/*/CONTEXT.md`, `brain/decisions/log.md`, `brain/references/`.
 - `.claude/` (skills, agents, rules) and which global skills are available.
 - The memory index (`MEMORY.md` in the Claude Code memory directory for this project) and whether session context is being updated.

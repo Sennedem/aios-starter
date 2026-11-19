@@ -1,6 +1,6 @@
 ---
 name: janitor
-description: Weekly curator for the whole AIOS. Reads every Claude Code session since the last run and writes the new durable facts, decisions and preferences into the right brain and OS files, retires stale context (passed deadlines, superseded sections, rotting tasks, overdue cadence rows), fixes router drift between CLAUDE.md and the skills, and does the housekeeping nothing else owns (tmp retention, dead scripts, silent scheduled jobs, failed backups). Autonomous with evidence, one commit per run. Use for "/janitor", "clean up the AIOS", "update stale context", "sweep my sessions into the brain", "what's out of date", or when the weekly cadence row is due. Not for mail (/inbox-janitor), not the read-only Four-Cs score (/audit), not memory merges (/memory-curate).
+description: Weekly curator for the whole AIOS. Reads every Claude Code session since the last run and writes the new durable facts, decisions and preferences into the right brain and OS files, retires stale context (passed deadlines, superseded sections, rotting open tasks, overdue cadence rows), fixes router drift between CLAUDE.md and the skills, and does the housekeeping nothing else owns (tmp retention, dead scripts, silent scheduled jobs, failed backups). Autonomous with evidence, one commit per run. Use for "/janitor", "clean up the AIOS", "update stale context", "sweep my sessions into the brain", "what's out of date", or when the weekly cadence row is due. Not for mail (/inbox-janitor), not the read-only Four-Cs score (/audit), not memory merges (/memory-curate).
 ---
 
 # /janitor: the curator
@@ -32,7 +32,7 @@ State lives in `state.json` next to this file. `lastRun` is the harvest watermar
    - dated claims in the brain whose date has passed ("by 2026-03-01", "until", "pending", "days out");
    - OS-layer files (`CLAUDE.md`, `connections.md`, `cadence.md`, `otherworlds/*`) not reviewed in 21 days;
    - skills in `.claude/skills/` that `CLAUDE.md` does not mention, and names in `CLAUDE.md` that are not skills (skip anything in `references/allowlist.md`);
-   - `tasks.yaml` enum spellings and todos untouched for more than 30 days;
+   - open tasks in each project's `## Next` section untouched for more than 30 days, and dated ones past their date;
    - `tmp/` files older than 14 days; scripts nothing references.
 4. **Session harvest.** List the session transcripts in the Claude Code projects directory for this repo (`~/.claude/projects/<this repo's path with separators replaced by dashes>/*.jsonl`) modified after the watermark. Exclude the current session. If there are none, skip to step 6.
 5. **Distil (delegated, parallel).** Split the transcripts into batches of about five and launch one **harvester** agent per batch in a single message. Brief (fill in the file list, change nothing else):
@@ -56,7 +56,7 @@ State lives in `state.json` next to this file. `lastRun` is the harvest watermar
    | how the user likes to work | `brain/context/how-i-work.md` |
    | new tool, connector or credential state | `connections.md` |
    | user preference or correction | a memory file + its `MEMORY.md` line |
-   | task done / new task | `tasks.yaml` |
+   | task done / new task | the project's `CONTEXT.md`, `## Next` section (tick it or add a `- [ ]` line); a dated one also goes on the calendar through `/deadline` |
    | recurring work started or stopped | `cadence.md` |
 
 5b. **Memory curate.** Run `/memory-curate` steps 0 to 2 exactly as its `SKILL.md` says, counting the memories step 5 just wrote. Nothing in its diff is applied autonomously: present it after the janitor report and apply only what the user approves. If the diff is empty, say "memory store: nothing to curate". Record the date as `lastMemoryCurate`.
@@ -64,7 +64,7 @@ State lives in `state.json` next to this file. `lastRun` is the harvest watermar
    - *Dated claim passed*: if the outcome is known (session evidence or a later line in the same file), rewrite the line to the outcome or retire it under Superseded; if unknown, ask under Questions ("launch target 2026-03-01: what happened?").
    - *OS-layer file older than 21 days*: re-read it against current reality; fix what is wrong and set `updated:`; if nothing is wrong, still set `updated:` and say "reviewed, no change".
    - *Skills missing from CLAUDE.md*: add a Commands line for live ones; propose retiring dead ones under Questions (skills are never moved autonomously).
-   - *tasks.yaml*: fix enum spellings; a todo rotting more than 30 days is marked `done` (with evidence) or set to `status: blocked` with `note: stale since <date>, confirm or drop`. Never deleted.
+   - *Open tasks in `## Next`*: one rotting more than 30 days is ticked (with evidence) or gets `(stale since <date>, confirm or drop)` appended. Never deleted.
    - *Cadence overdue more than 7 days*: a one-off row whose event passed and evidence shows done is deleted (the ledger is a to-do list, not history); a recurring row keeps its date and goes under *Flagged* (the janitor does not run other skills).
    - *tmp/ older than 14 days* and not referenced: delete. Referenced: keep.
    - *Dead scripts*: move to `scripts/_retired/` and say so.

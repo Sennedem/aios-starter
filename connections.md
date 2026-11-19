@@ -69,7 +69,7 @@ session. Type `/mcp` in Claude Code to see what is connected.
 |---|---|---|
 | The app your work lives in (Notion, Slack, Linear, Asana, HubSpot and others) | Claude reads and updates work where it already is, and `/setup` can harvest it | Claude connector settings, if a connector exists for it |
 | A web search or scraping connector | Research legs (the `researcher` agent), `/ingest` on articles, fact checks before a decision | Claude connector settings, or `claude mcp add` |
-| A browser driver (the Playwright MCP server) | Anything behind a login that has no connector: portals, dashboards, forms | `claude mcp add playwright -- npx @playwright/mcp@latest` |
+| A browser driver (the Playwright MCP server) | Anything behind a login that has no connector: portals, admin panels, forms | `claude mcp add playwright -- npx @playwright/mcp@latest` |
 | `yt-dlp` and `ffmpeg` | `/ingest` on videos: captions and frames | Your package manager (`winget`, `brew`, `apt`) |
 | A model from outside the Claude family (for example the Codex CLI) | `/second-opinion` and the outside seat on `/jury` | That vendor's CLI and login |
 | An automation hub (Zapier or similar) | Apps that have no connector of their own | Claude connector settings |

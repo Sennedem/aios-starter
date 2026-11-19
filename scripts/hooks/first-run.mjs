@@ -26,8 +26,8 @@ try {
       ]
     : [
         'AIOS FIRST RUN: this clone has not been set up. The brain is empty.',
-        'On the user\'s first message, whatever it says, invoke the `setup` skill and begin phase 1 in the same reply.',
-        'Do not ask whether to start, do not give a tour. Open in three sentences and ask the first question.',
+        'On the user\'s first message, whatever it says, invoke the `setup` skill and begin step 1 in the same reply.',
+        'Do not ask whether to start. Open in three sentences and ask the first question (their name); the explanation of the system is step 2.',
         'If the first message is an urgent, unrelated request, answer it briefly, then start setup.',
       ];
 

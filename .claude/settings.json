@@ -23,6 +23,15 @@
             "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/metered-guard.mjs\""
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/collision-guard.mjs\" check"
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -32,6 +41,10 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/bump-updated.mjs\""
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/collision-guard.mjs\" record"
           }
         ]
       }
@@ -39,6 +52,10 @@
     "SessionEnd": [
       {
         "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/sweep-root.mjs\""
+          },
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/scripts/brain-janitor.mjs\" --local --quiet --out \"$CLAUDE_PROJECT_DIR/tmp/janitor-local.md\" || true"

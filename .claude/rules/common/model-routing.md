@@ -9,7 +9,7 @@ Model and effort are the two levers on the usage window: heavier models burn it 
 ## When it fires
 
 - Plan mode (primary): every plan ends with a Model & effort line (recommended execution model, effort, one-line why) so the user can switch at approval. That is the cheap moment: a mid-session switch re-reads the whole history uncached. When the task is hard (unknowns, dependent steps, claims to verify), the same line adds `+ five-gates`, so the executing session loads that discipline at start.
-- `/goal`: the task note in `tasks.yaml` gets a route stamp (for example `run on sonnet/medium`, plus `+ five-gates` for hard tasks) so whichever session runs it later starts on the right tier.
+- `/goal`: the open task it writes into the project's `## Next` section gets a route stamp (for example `run on sonnet/medium`, plus `+ five-gates` for hard tasks) so whichever session runs it later starts on the right tier.
 - Ad hoc: a task lands mid-session that clearly belongs on another tier; use the friction protocol below.
 
 ## Routing matrix (main session)
@@ -17,7 +17,7 @@ Model and effort are the two levers on the usage window: heavier models burn it 
 | Task smells like | Model | Effort |
 |---|---|---|
 | Mechanical grind: bulk reads, scraping, transcription, file moves, reformatting | not the main session: dispatch `harvester` (Haiku); if it must run in the main session, Haiku | low |
-| Execute a fixed spec: approved plan, template drafting, dashboard refresh | Sonnet | low to medium |
+| Execute a fixed spec: approved plan, template drafting, a report refresh | Sonnet | low to medium |
 | Standard judgment: writing, research synthesis, everyday planning | Sonnet, or a top-tier model | high on Sonnet, medium on top tier |
 | Hard synthesis: strategy, contested decisions, multi-constraint design | top-tier model | high |
 | Genuinely novel, highest stakes | the strongest model available | high or above |

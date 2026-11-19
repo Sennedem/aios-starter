@@ -4,8 +4,8 @@ This folder is an **AI operating system** for one person. It is a routing tree a
 
 The router points to five things:
 
-1. **Rules**: `.claude/rules/common/`
-2. **Registries**: `connections.md` (tools and accounts), `cadence.md` (recurring work), `tasks.yaml` (tasks and deadlines)
+1. **Rules**: `.claude/rules/common/` (`working-agreements.md` holds the default ways of working)
+2. **Registries**: `connections.md` (tools and accounts), `cadence.md` (recurring work)
 3. **Skills**: `.claude/skills/`
 4. **Other places**: `otherworlds/`, one routing note per external home (a code repo, a cloud folder, a site)
 5. **The brain**: `brain/`, an Obsidian vault of plain markdown. Start at `brain/README.md`, the index of every page.
@@ -16,7 +16,7 @@ Always open this folder as the Claude Code working root. Hooks and session memor
 
 ## 🔴 First run
 
-If the file `.aios-setup-done` does not exist at the repo root, this clone has not been set up and the brain is empty. On the user's first message, whatever it says, invoke the `setup` skill and begin in the same reply: three sentences, then the first question. Do not ask whether to start and do not give a tour. If a capture file `brain/brainstorms/*-setup.md` exists, resume from it. Only an urgent, unrelated request comes first, and setup starts right after it.
+If the file `.aios-setup-done` does not exist at the repo root, this clone has not been set up and the brain is empty. On the user's first message, whatever it says, invoke the `setup` skill and begin step 1 in the same reply: three sentences, then the first question. Do not ask whether to start. The explanation of how the system works is step 2 of setup, after the level question, not before it. If a capture file `brain/brainstorms/*-setup.md` exists, resume from it. Only an urgent, unrelated request comes first, and setup starts right after it.
 
 ---
 
@@ -39,7 +39,7 @@ These hold for every user:
 - **Flag repeats.** A task the user does three or more times a week is an automation candidate. Say so once and note it in `brain/context/how-i-work.md`.
 - **Delegate by default, route by model.** Bulk reading, scraping and independent research legs go to subagents, in parallel when they are independent. The main session keeps synthesis and decisions. Details: `.claude/rules/common/agents.md` and `model-routing.md`.
 - **All writing goes through the `writing` skill**, and every piece of prose gets the humanizer pass (`.claude/rules/common/writing.md`). Draft first. The user approves anything that is sent or published.
-- **`inbox/` is the user's drop zone and Claude does the filing.** When a file lands there, move it to its real home and leave the inbox empty. Check the inbox before saying a file is not there.
+- **There can be two inboxes: check both before saying a file is not there.** `inbox/` in this folder, and the phone inbox in the user's cloud drive (its path is the `inbox:` line in `otherworlds/work-folder.md`, set up by `/setup`). The cloud one is outside this folder, so a search of the folder never finds it. When a file lands in either, move it to its real home (`inbox/README.md` has the routing) and leave both empty.
 - **Verify before saying done.** Check the live state the task was meant to change (`.claude/rules/common/verification.md`).
 
 ---
@@ -48,7 +48,7 @@ These hold for every user:
 
 | Layer | Where | What |
 |---|---|---|
-| **OS** | this folder | The router (this file), `.claude/` skills, agents and rules, the registries, `dashboard/`, `scripts/`, `inbox/`, `otherworlds/`, `tmp/` |
+| **OS** | this folder | The router (this file), `.claude/` skills, agents and rules, the registries, `scripts/` (hooks, routines, tools), `docs/`, `inbox/`, `otherworlds/`, `tmp/` |
 | **Brain** | `brain/` | All knowledge as markdown: `context/`, `projects/`, `decisions/`, `references/`, `wiki/`, `brainstorms/`, `audits/` |
 | **Worlds** | wherever they live | Code repos, cloud folders, media, sites. Each has a note in `otherworlds/` |
 
@@ -69,9 +69,13 @@ These hold for every user:
 | Knowledge from videos, articles, PDFs | `brain/wiki/` (filed by `/ingest`) |
 | Tool, connector and account status, budgets for paid APIs | `connections.md` |
 | What is due and what repeats | `cadence.md` |
-| Tasks and deadlines | `tasks.yaml`, shown by `/dashboard` |
+| Open tasks | the `## Next` section of each project's `CONTEXT.md` |
+| Deadlines and appointments | the calendar, through `/deadline` |
+| How Claude works here by default | `.claude/rules/common/working-agreements.md` |
+| What a cloud routine does | its spec in `scripts/routines/` |
+| Optional packs, kept or removed | `.claude/packs.json` (`node scripts/packs.mjs list`) |
 | Link and frontmatter rules for brain pages | `brain/conventions.md` |
-| A file the user dropped | `inbox/` |
+| A file the user dropped | `inbox/` and the cloud phone inbox |
 
 ---
 
@@ -88,7 +92,7 @@ Before ending a turn that did meaningful work on a topic, update that topic's pa
 
 | You worked on | Update |
 |---|---|
-| A project | `brain/projects/<slug>/CONTEXT.md` |
+| A project | `brain/projects/<slug>/CONTEXT.md` (open tasks under `## Next`) |
 | A shift in what matters now | `brain/context/priorities.md` |
 | Who the user is or their situation | `brain/context/about-me.md` |
 | How they work, or how Claude should work with them | `brain/context/how-i-work.md` |
@@ -108,6 +112,8 @@ A correction from the user is also a bug report against the skill that produced 
 ## Cadence
 
 At the start of a session, read `cadence.md`. If something is overdue or due today, say so in one line and offer to run it. If `tmp/BACKUP-PUSH-FAILED.md` exists, say that too.
+
+If the user turned on the cloud e-mails during setup, two routines also run without this machine: a morning brief and a weekly review that includes the janitor. Their prompts are one line each; what they do is specified in `scripts/routines/morning-brief.md` and `weekly-review.md`. Change a routine by editing its spec, never its prompt.
 
 ## Backups
 
@@ -129,18 +135,22 @@ One line each. The recipe is in each skill's `SKILL.md`.
 - `/offer-design`: a priced, named offer with the risk reversed
 - `/sales-engine`: get, close and keep customers
 - `/cadence`: the morning check
-- `/goal`: capture a goal and route it into priorities, tasks and cadence
+- `/goal`: capture a goal and route it into priorities, the project's open tasks, the calendar and cadence
 - `/deadline`: put a hand-in on the calendar
-- `/dashboard`: refresh and open the HUD
 - `/ingest`: file a video, article or PDF into `brain/wiki/`
 - `/audit`: the weekly gap report
 - `/level-up`: build one automation
 - `/janitor`: the weekly curator: sessions into the brain, stale context retired
 - `/memory-curate`: tidy the memory store, with approval
 - `/inbox-janitor`: label the mail inbox, labels only
+- `/save-session` / `/resume-session`: write a hand-off before closing a session, read it in the next one
+- `/update-aios`: pull improvements from the public starter without touching what is yours
+- `/study`: learn, quiz, practice exams and redo the misses for a course <!-- pack:study -->
+- `/outreach`: personalised cold e-mail, drafts first, sent from your own Gmail <!-- pack:outreach -->
 
 ### When two skills look alike
 
 - **`/setup` or `/onboard` or `/grill-me`:** setup is the first run on an empty brain. Onboard is a ten-question refresh. Grill-me goes deep on one topic.
 - **`/grill-me` or `/jury` or `/second-opinion`:** grill-me asks the user. The jury attacks a decision and returns a verdict. Second-opinion challenges one piece of work with another model. They chain in that order.
 - **`/audit` or `/janitor` or `brain-janitor.mjs`:** the script finds structural defects. The audit scores how good the context is and changes nothing. The janitor fixes content.
+- **`/save-session` or `/janitor`:** save-session writes one session's in-flight state for the next session. The janitor turns many sessions into durable brain facts.

@@ -1,0 +1,54 @@
+{
+  "about": "Opt-in packs. Brain pages join a pack through `pack:` in their frontmatter; skills, scripts and workflows join through `paths` below. Lines in CLAUDE.md and README.md that end in <!-- pack:NAME --> belong to that pack too. `node scripts/packs.mjs list` shows them, `node scripts/packs.mjs remove NAME` deletes one cleanly. `removed` records what the user declined, so /update-aios never brings it back.",
+  "removed": [],
+  "packs": {
+    "core": {
+      "label": "Core",
+      "what": "How to work with AI and Claude Code: agents, prompting, skills, memory, verification, routines, models and cost. Always kept.",
+      "removable": false,
+      "paths": []
+    },
+    "business": {
+      "label": "Business",
+      "what": "Running a one-person business or selling AI work: offers, niches, funnels, pricing, business models.",
+      "removable": true,
+      "paths": []
+    },
+    "creator": {
+      "label": "Creator",
+      "what": "Social platforms and content: how YouTube, Shorts, TikTok and Instagram distribute posts, with posting checklists.",
+      "removable": true,
+      "paths": []
+    },
+    "web-design": {
+      "label": "Web design",
+      "what": "Building websites and interfaces: design quality, palettes, layout, motion, inspiration.",
+      "removable": true,
+      "paths": []
+    },
+    "coding": {
+      "label": "Coding",
+      "what": "Tools and techniques for people who write code: SDKs, job runners, developer repositories.",
+      "removable": true,
+      "paths": []
+    },
+    "study": {
+      "label": "Study",
+      "what": "The /study engine (learn, quiz, practice exams, redo the misses) and the learning-science reference behind it.",
+      "removable": true,
+      "paths": [".claude/skills/study"]
+    },
+    "outreach": {
+      "label": "Outreach",
+      "what": "The /outreach cold-email engine: personalised drafts, a lint gate, sending from your own Gmail through a GitHub Action.",
+      "removable": true,
+      "paths": [".claude/skills/outreach", "scripts/outreach", ".github/workflows/send-file.yml", ".github/workflows/outreach.yml"]
+    },
+    "community": {
+      "label": "Community skills",
+      "what": "A curated list of third-party skills worth installing, with install steps. Links only, nothing copied.",
+      "removable": true,
+      "paths": ["docs/community-skills.md"]
+    }
+  }
+}

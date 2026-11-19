@@ -10,11 +10,13 @@ earlier, or that has never run, and offer to run it. After running an item, set 
 to today and move `Next due` forward by its `Interval`.
 
 Dates are absolute (`YYYY-MM-DD`) in the user's local timezone. A row with no last run and no
-next due counts as due now. The janitor (`scripts/brain-janitor.mjs`) and the dashboard both read
+next due counts as due now. The janitor (`scripts/brain-janitor.mjs`) and the cloud routines read
 this table by its column names, so keep the header row as it is.
 
 | Item | Command | Interval | Last run | Next due | Notes |
 |---|---|---|---|---|---|
 | Morning check | `/cadence` | daily |  |  | Ledger, today's calendar if a calendar connector exists, clashes in the week ahead. |
 | Weekly audit | `/audit` | weekly |  |  | Scores the system on the Four Cs and writes a report to `brain/audits/`. |
-| Weekly janitor | `/janitor` | weekly |  |  | Sweeps sessions into the brain, retires stale context, fixes drift. Run after the audit. |
+| Weekly janitor | `/janitor` | weekly |  |  | Sweeps sessions into the brain, retires stale context, fixes drift. Run after the audit. When the weekly review routine is on, it runs the janitor in the cloud and this row goes. |
+
+Cloud routines set up by `/setup` step 10 get a row each here (Command: the routine name; Notes: recipient, mail connector, send time and zone, routine id). Their specs live in `scripts/routines/`.

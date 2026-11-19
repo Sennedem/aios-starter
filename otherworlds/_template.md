@@ -1,3 +1,9 @@
+---
+type: reference
+updated: {{date}}
+# inbox: <absolute path>   only on the note for a cloud folder that has a phone inbox; the inbox-check hook reads it
+---
+
 # {{Name of the place}}
 
 - **What it is:** a code repository, a cloud folder, a site, a shared drive

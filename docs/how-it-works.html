@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How your AIOS works</title>
+<style>
+  :root {
+    --paper: #f6f4ee;
+    --card: #ffffff;
+    --ink: #16161a;
+    --muted: #5c5c66;
+    --line: #16161a;
+    --soft: #e4e1d8;
+    --accent: #2f5bea;
+    --accent-ink: #ffffff;
+    --tag: #eef1fd;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #121214;
+      --card: #1b1b1f;
+      --ink: #f1efe9;
+      --muted: #a5a5ae;
+      --line: #f1efe9;
+      --soft: #2c2c32;
+      --accent: #7b9bff;
+      --accent-ink: #0d0d10;
+      --tag: #1f2540;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #121214; --card: #1b1b1f; --ink: #f1efe9; --muted: #a5a5ae;
+    --line: #f1efe9; --soft: #2c2c32; --accent: #7b9bff; --accent-ink: #0d0d10; --tag: #1f2540;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 40px 16px 64px; }
+  header { border-bottom: 2px solid var(--line); padding-bottom: 24px; margin-bottom: 32px; }
+  .kicker { font: 600 12px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  h1 { font-size: clamp(30px, 5.5vw, 52px); line-height: 1.05; margin: 12px 0 14px; letter-spacing: -0.02em; }
+  .lede { font-size: clamp(17px, 2.2vw, 20px); color: var(--muted); max-width: 680px; margin: 0; }
+  h2 { font-size: 22px; margin: 48px 0 6px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0 0 20px; max-width: 680px; }
+  code { font: 0.88em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--soft); padding: 1px 5px; border-radius: 3px; }
+
+  /* Diagram */
+  .diagram { background: var(--card); border: 2px solid var(--line); padding: 16px; }
+  .diagram svg { display: block; width: 100%; height: auto; }
+  .d-box { fill: var(--card); stroke: var(--line); stroke-width: 2; }
+  .d-hub { fill: var(--accent); stroke: var(--line); stroke-width: 2; }
+  .d-edge { stroke: var(--line); stroke-width: 2; fill: none; }
+  .d-dash { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 5 5; fill: none; }
+  .d-title { font: 700 17px ui-sans-serif, system-ui, sans-serif; fill: var(--ink); }
+  .d-hub-title { font: 700 19px ui-sans-serif, system-ui, sans-serif; fill: var(--accent-ink); }
+  .d-hub-text { font: 13px ui-sans-serif, system-ui, sans-serif; fill: var(--accent-ink); }
+  .d-path { font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: var(--muted); }
+  .d-text { font: 13px ui-sans-serif, system-ui, sans-serif; fill: var(--ink); }
+  .d-label { font: 600 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: var(--muted); letter-spacing: .06em; }
+  .diagram svg.diagram-mobile { display: none; }
+
+  /* Parts */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .part { background: var(--card); border: 2px solid var(--line); padding: 20px; }
+  .part h3 { margin: 0 0 2px; font-size: 18px; }
+  .part .path { font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--muted); }
+  .part p { margin: 10px 0 0; }
+  .part .like { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--soft); color: var(--muted); font-size: 14px; }
+
+  /* Day flow */
+  ol.flow { list-style: none; counter-reset: step; padding: 0; margin: 0; display: grid; gap: 0; border: 2px solid var(--line); background: var(--card); }
+  ol.flow li { counter-increment: step; display: grid; grid-template-columns: 56px 1fr; gap: 0; border-top: 1px solid var(--soft); }
+  ol.flow li:first-child { border-top: 0; }
+  ol.flow li::before { content: counter(step); font: 700 18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; display: flex; align-items: flex-start; justify-content: center; padding-top: 16px; border-right: 1px solid var(--soft); color: var(--accent); }
+  ol.flow .step { padding: 14px 18px; }
+  ol.flow b { display: block; }
+  ol.flow span { color: var(--muted); font-size: 15px; }
+
+  /* Memory */
+  .memory { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .note { background: var(--card); border: 2px solid var(--line); padding: 20px; }
+  .note pre { margin: 10px 0 0; white-space: pre-wrap; font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--soft); padding: 12px; }
+  .note h3 { margin: 0; font-size: 17px; }
+
+  footer { margin-top: 56px; padding-top: 18px; border-top: 2px solid var(--line); color: var(--muted); font-size: 14px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .theme { font: inherit; background: none; border: 2px solid var(--line); color: var(--ink); padding: 4px 10px; cursor: pointer; }
+
+  @media (max-width: 720px) {
+    .wrap { padding-top: 28px; }
+    .diagram svg.diagram-desktop { display: none; }
+    .diagram svg.diagram-mobile { display: block; }
+    .memory { grid-template-columns: 1fr; }
+    ol.flow li { grid-template-columns: 44px 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">Your AI operating system</div>
+    <h1>How it works</h1>
+    <p class="lede">A folder of plain text files that Claude reads before it starts. It holds who you are, what you work on and how you like things done, so every session starts with context instead of from zero.</p>
+  </header>
+
+  <h2>The map</h2>
+  <p class="sub">The router sits in the middle and points at everything else. Claude reads it first, then opens only the page a task needs.</p>
+
+  <div class="diagram">
+    <svg class="diagram-desktop" viewBox="0 0 960 570" role="img" aria-labelledby="mapTitle mapDesc">
+      <title id="mapTitle">Map of the system</title>
+      <desc id="mapDesc">The router CLAUDE.md in the centre, linked to the brain, skills, rules, hooks, cadence and memory. Cloud routines read the private backup and send e-mails.</desc>
+      <!-- edges -->
+      <path class="d-edge" d="M480 280 L180 110"/>
+      <path class="d-edge" d="M480 280 L480 95"/>
+      <path class="d-edge" d="M480 280 L780 110"/>
+      <path class="d-edge" d="M480 280 L180 450"/>
+      <path class="d-edge" d="M480 280 L480 465"/>
+      <path class="d-edge" d="M480 280 L780 450"/>
+      <!-- hub -->
+      <rect class="d-hub" x="360" y="225" width="240" height="110"/>
+      <text class="d-hub-title" x="480" y="268" text-anchor="middle">The router</text>
+      <text class="d-hub-text" x="480" y="290" text-anchor="middle">CLAUDE.md, read first.</text>
+      <text class="d-hub-text" x="480" y="309" text-anchor="middle">Pointers, never the knowledge.</text>
+      <!-- brain -->
+      <rect class="d-box" x="40" y="50" width="280" height="120"/>
+      <text class="d-label" x="58" y="76">KNOWS</text>
+      <text class="d-title" x="58" y="100">The brain</text>
+      <text class="d-path" x="58" y="120">brain/</text>
+      <text class="d-text" x="58" y="146">You, your projects, decisions,</text>
+      <text class="d-text" x="58" y="163">what you learn. Open it in Obsidian.</text>
+      <!-- skills -->
+      <rect class="d-box" x="340" y="20" width="280" height="120"/>
+      <text class="d-label" x="358" y="46">DOES</text>
+      <text class="d-title" x="358" y="70">Skills</text>
+      <text class="d-path" x="358" y="90">.claude/skills/</text>
+      <text class="d-text" x="358" y="116">Written recipes for jobs that repeat.</text>
+      <text class="d-text" x="358" y="133">Type /writing and it runs.</text>
+      <!-- rules -->
+      <rect class="d-box" x="640" y="50" width="280" height="120"/>
+      <text class="d-label" x="658" y="76">BEHAVES</text>
+      <text class="d-title" x="658" y="100">Rules</text>
+      <text class="d-path" x="658" y="120">.claude/rules/</text>
+      <text class="d-text" x="658" y="146">Check before saying done. Ask</text>
+      <text class="d-text" x="658" y="163">before sending, spending, deleting.</text>
+      <!-- hooks -->
+      <rect class="d-box" x="40" y="390" width="280" height="120"/>
+      <text class="d-label" x="58" y="416">RUNS BY ITSELF</text>
+      <text class="d-title" x="58" y="440">Hooks</text>
+      <text class="d-path" x="58" y="460">scripts/hooks/</text>
+      <text class="d-text" x="58" y="486">Inbox check, date stamps, backup,</text>
+      <text class="d-text" x="58" y="503">a guard on paid API calls.</text>
+      <!-- cadence -->
+      <rect class="d-box" x="340" y="420" width="280" height="132"/>
+      <text class="d-label" x="358" y="446">REMEMBERS WHEN</text>
+      <text class="d-title" x="358" y="470">Cadence</text>
+      <text class="d-path" x="358" y="490">cadence.md, scripts/routines/</text>
+      <text class="d-text" x="358" y="516">Recurring work and when it is due.</text>
+      <text class="d-text" x="358" y="533">Optional morning and weekly e-mails.</text>
+      <!-- memory -->
+      <rect class="d-box" x="640" y="390" width="280" height="120"/>
+      <text class="d-label" x="658" y="416">LEARNS</text>
+      <text class="d-title" x="658" y="440">Memory</text>
+      <text class="d-path" x="658" y="460">MEMORY.md + one file per lesson</text>
+      <text class="d-text" x="658" y="486">Your corrections, kept for every</text>
+      <text class="d-text" x="658" y="503">later session.</text>
+    </svg>
+
+    <svg class="diagram-mobile" viewBox="0 0 360 760" role="img" aria-label="Map of the system: the router at the top, linked to the brain, skills, rules, hooks, cadence and memory">
+      <path class="d-edge" d="M180 110 L180 730"/>
+      <rect class="d-hub" x="20" y="16" width="320" height="94"/>
+      <text class="d-hub-title" x="180" y="54" text-anchor="middle">The router</text>
+      <text class="d-hub-text" x="180" y="76" text-anchor="middle">CLAUDE.md, read first.</text>
+      <text class="d-hub-text" x="180" y="94" text-anchor="middle">Pointers, never the knowledge.</text>
+      <g>
+        <rect class="d-box" x="20" y="134" width="320" height="86"/>
+        <text class="d-label" x="36" y="156">KNOWS</text>
+        <text class="d-title" x="36" y="180">The brain</text>
+        <text class="d-path" x="140" y="180">brain/</text>
+        <text class="d-text" x="36" y="204">You, your projects, what you learn.</text>
+      </g>
+      <g>
+        <rect class="d-box" x="20" y="234" width="320" height="86"/>
+        <text class="d-label" x="36" y="256">DOES</text>
+        <text class="d-title" x="36" y="280">Skills</text>
+        <text class="d-path" x="110" y="280">.claude/skills/</text>
+        <text class="d-text" x="36" y="304">Recipes for jobs that repeat.</text>
+      </g>
+      <g>
+        <rect class="d-box" x="20" y="334" width="320" height="86"/>
+        <text class="d-label" x="36" y="356">BEHAVES</text>
+        <text class="d-title" x="36" y="380">Rules</text>
+        <text class="d-path" x="104" y="380">.claude/rules/</text>
+        <text class="d-text" x="36" y="404">Check first. Ask before sending.</text>
+      </g>
+      <g>
+        <rect class="d-box" x="20" y="434" width="320" height="86"/>
+        <text class="d-label" x="36" y="456">RUNS BY ITSELF</text>
+        <text class="d-title" x="36" y="480">Hooks</text>
+        <text class="d-path" x="104" y="480">scripts/hooks/</text>
+        <text class="d-text" x="36" y="504">Inbox check, backup, cost guard.</text>
+      </g>
+      <g>
+        <rect class="d-box" x="20" y="534" width="320" height="86"/>
+        <text class="d-label" x="36" y="556">REMEMBERS WHEN</text>
+        <text class="d-title" x="36" y="580">Cadence</text>
+        <text class="d-path" x="124" y="580">cadence.md</text>
+        <text class="d-text" x="36" y="604">Recurring work, optional e-mails.</text>
+      </g>
+      <g>
+        <rect class="d-box" x="20" y="634" width="320" height="96"/>
+        <text class="d-label" x="36" y="656">LEARNS</text>
+        <text class="d-title" x="36" y="680">Memory</text>
+        <text class="d-path" x="120" y="680">MEMORY.md</text>
+        <text class="d-text" x="36" y="704">Your corrections, kept for</text>
+        <text class="d-text" x="36" y="720">every later session.</text>
+      </g>
+    </svg>
+  </div>
+
+  <h2>The parts</h2>
+  <p class="sub">Every part is a file or a folder you can open and change. Nothing is hidden in an app.</p>
+  <div class="grid">
+    <div class="part">
+      <h3>The router</h3>
+      <div class="path">CLAUDE.md</div>
+      <p>The first page Claude reads in every session. It says where things live and how to behave, and points at the brain for the facts. Keeping it short is what keeps sessions fast.</p>
+      <div class="like">Like the index page of a binder.</div>
+    </div>
+    <div class="part">
+      <h3>The brain</h3>
+      <div class="path">brain/</div>
+      <p>Plain markdown notes, linked to each other: about you, one page per project with its open tasks, the decisions you made and why, and a wiki of what you learn from videos and articles. Obsidian shows it as pages and a graph.</p>
+      <div class="like">Like a notebook a good assistant keeps about the person they work for.</div>
+    </div>
+    <div class="part">
+      <h3>Skills</h3>
+      <div class="path">.claude/skills/</div>
+      <p>Written recipes for jobs that repeat: <code>/writing</code> drafts in your voice, <code>/deadline</code> puts a hand-in on your calendar, <code>/jury</code> stress-tests a decision. When you correct a result, the recipe gets fixed so the mistake does not come back.</p>
+      <div class="like">Like recipe cards: the same dish, done right every time.</div>
+    </div>
+    <div class="part">
+      <h3>Rules</h3>
+      <div class="path">.claude/rules/</div>
+      <p>How Claude works here: verify before saying done, never send or spend without your yes, hand bulk reading to helper agents, write without the usual AI tells. Your own agreements from setup sit on top.</p>
+      <div class="like">Like the house rules taped inside a cupboard door.</div>
+    </div>
+    <div class="part">
+      <h3>Hooks</h3>
+      <div class="path">scripts/hooks/</div>
+      <p>Small scripts that run at fixed moments without anyone asking: list what is waiting in your inboxes at the start of a session, stamp the date on edited notes, warn when two windows edit one file, back everything up to your private copy at the end.</p>
+      <div class="like">Like alarms that ring by themselves.</div>
+    </div>
+    <div class="part">
+      <h3>Cadence and routines</h3>
+      <div class="path">cadence.md · scripts/routines/</div>
+      <p>The list of recurring work with when it last ran and when it is due. Claude reads it at the start of each session. If you allow it, two cloud routines e-mail you: a morning brief and a weekly review, even when your computer is off.</p>
+      <div class="like">Like a wall calendar of routines, plus a note slipped under the door each morning.</div>
+    </div>
+  </div>
+
+  <h2>A normal day</h2>
+  <p class="sub">What happens on its own, and what you do.</p>
+  <ol class="flow">
+    <li><div class="step"><b>Morning e-mail</b><span>What is due today, your calendar, deadlines this week, open tasks. Sent by a cloud routine that read your private backup.</span></div></li>
+    <li><div class="step"><b>You open a session in this folder</b><span>Hooks run. Claude reads the router, checks the cadence list and both inboxes, and tells you in one line what needs you.</span></div></li>
+    <li><div class="step"><b>You ask for something</b><span>Claude opens only the brain pages that task needs, runs the matching skill, and checks the result before calling it done.</span></div></li>
+    <li><div class="step"><b>You correct it</b><span>The correction becomes a feedback memory, and the skill that made the mistake gets patched.</span></div></li>
+    <li><div class="step"><b>You close the session</b><span>Claude updates the pages the work touched. A hook checks the links and backs everything up to your private GitHub copy.</span></div></li>
+    <li><div class="step"><b>End of the week</b><span>The weekly review e-mail: what got done, what went stale, the system's score, and one improvement worth making next.</span></div></li>
+  </ol>
+
+  <h2>How a correction sticks</h2>
+  <p class="sub">The system gets better because your corrections are written down where the next session will read them.</p>
+  <div class="memory">
+    <div class="note">
+      <h3>You say</h3>
+      <pre>Don't put the price at the bottom of a proposal again. Clients want it on page one.</pre>
+    </div>
+    <div class="note">
+      <h3>Claude saves</h3>
+      <pre>---
+type: feedback
+---
+Price goes on page one of every proposal.
+
+Why: clients look for it first.
+How to apply: any proposal or quote.</pre>
+    </div>
+  </div>
+
+  <footer>
+    <span>Reopen this page any time: <code>docs/how-it-works.html</code></span>
+    <button class="theme" type="button" id="theme">Switch theme</button>
+  </footer>
+</div>
+<script>
+  (function () {
+    var root = document.documentElement;
+    var key = 'aios-theme';
+    try { var saved = localStorage.getItem(key); if (saved) root.setAttribute('data-theme', saved); } catch (e) {}
+    document.getElementById('theme').addEventListener('click', function () {
+      var dark = root.getAttribute('data-theme') === 'dark' ||
+        (!root.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      var next = dark ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem(key, next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>

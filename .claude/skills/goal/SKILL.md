@@ -1,6 +1,6 @@
 ---
 name: goal
-description: Capture a goal, sharpen it with a few questions, and route it into the system: priorities in the brain, tasks.yaml and the dashboard, cadence if it recurs, the decisions log if it changes direction. Use when the user states a goal, says "/goal", "my goal is", "I want to achieve X", or wants a goal broken into trackable work.
+description: Capture a goal, sharpen it with a few questions, and route it into the system: priorities in the brain, open tasks on the project page, dated steps on the calendar, cadence if it recurs, the decisions log if it changes direction. Use when the user states a goal, says "/goal", "my goal is", "I want to achieve X", or wants a goal broken into trackable work.
 ---
 
 # /goal: capture a goal and wire it into the system
@@ -15,8 +15,9 @@ One run = one goal, sharpened and routed to where the OS will act on it. This is
    - By when? (hard date or ambition)
    - Which project or area does it belong to, and what does it displace? A new goal that displaces nothing is a wish.
 3. **Route it:**
-   - **Always:** add concrete tasks to `tasks.yaml` (`title / area / status / progress / deadline / priority / note`) so it shows on the dashboard with a countdown.
-   - **Always:** stamp the route in the task `note` (`run on <model>/<effort>`, per `.claude/rules/common/model-routing.md`) so whichever session executes it later starts on the right tier. Keep note values free of colons.
+   - **Always:** add the concrete steps as open tasks in the project's `brain/projects/<slug>/CONTEXT.md`, under `## Next`, one line each: `- [ ] <step> (due YYYY-MM-DD) · run on <model>/<effort>`. The route stamp follows `.claude/rules/common/model-routing.md`, so whichever session executes it later starts on the right tier. The morning brief lists these lines and the janitor flags dated ones that pass.
+   - **Dated steps also go on the calendar** through `/deadline` (conflict-checked, with the user's reminders). The calendar is where a date gets noticed; the project page is where the task is tracked.
+   - **No project fits?** Ask which project it belongs to, or create the project page from `brain/templates/project-context.md` with its index line.
    - **If it changes what matters now:** update `brain/context/priorities.md` and say what moved down.
    - **If it is recurring work:** add a row to `cadence.md` instead of a one-off task.
    - **If it is a real change of direction:** append the why to `brain/decisions/log.md`.
@@ -25,5 +26,5 @@ One run = one goal, sharpened and routed to where the OS will act on it. This is
 ## Rules
 
 - Challenge weak goals: no measure, no deadline, or a clash with `priorities.md` gets said plainly, with a proposed fix.
-- Don't pad the brain: a goal that is just a task gets a `tasks.yaml` row and nothing else.
+- Don't pad the brain: a goal that is just a task gets one `## Next` line (and a calendar entry if it has a date) and nothing else.
 - Bump frontmatter `updated:` on any brain page you touch.

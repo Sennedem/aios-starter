@@ -26,13 +26,17 @@ _Customers, partners, teammates, teachers. Link to [[context/network|Network]] r
 
 ## Where things live
 
-_Code repo, cloud folder, site, dashboards. Each external place has a note in the OS folder `otherworlds/`._
+_Code repo, cloud folder, site, admin panels. Each external place has a note in the OS folder `otherworlds/`._
 
 ## How work gets done here
 
 _The recurring jobs, the tools, the rules of this project._
 
-## Open questions and next steps
+## Next
+
+_Open tasks, one per line. A dated one carries its date and also sits on the calendar (`/deadline`). The morning brief lists these and the janitor flags the ones past their date._
+
+## Open questions
 
 -
 

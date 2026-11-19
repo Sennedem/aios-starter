@@ -1,0 +1,70 @@
+name: Outreach send
+
+# Sends approved outreach mail from your own Gmail. Part of the outreach pack:
+# scripts/outreach/send_file.py does the work, SETUP-GMAIL.md sets it up.
+#
+# Trigger = a push that adds an entry directly under outbox/. Only
+# scripts/outreach/approve.py --send writes there, and only after you said
+# "send". Drafts live in tmp/outreach/, which git ignores, so the session-end
+# backup push can never turn a draft into a send. An entry without the approval
+# stamp is held, not sent.
+#
+# The weekday schedule picks up entries that waited for a later send_on date or
+# for the next day's cap. It sends nothing that was not already approved.
+# Times are UTC: 08:17 UTC. Change the cron line to suit your morning.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "outbox/*.json"
+  schedule:
+    - cron: "17 8 * * 1-5"
+  workflow_dispatch:
+
+concurrency:
+  group: outreach-send
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install requests
+
+      - name: Send approved outbox entries
+        working-directory: scripts/outreach
+        env:
+          GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
+          GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
+          GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+        run: python send_file.py
+
+      - name: Commit outbox state
+        # always(): a run that sent some mail and then failed must still record
+        # what it sent, or the next run would send it again.
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -d outbox ]; then git add -A outbox; fi
+          if [ -d brain/projects ]; then git add -A brain/projects; fi
+          git diff --cached --quiet && echo "no changes" && exit 0
+          git commit -m "chore: outreach send $(date -u +%Y-%m-%dT%H:%MZ)"
+          # Your session-end backup also pushes this repo; rebase and retry
+          # rather than lose the race and leave sent mail unrecorded.
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            git rebase --abort 2>/dev/null || true
+            echo "push attempt $attempt lost a race; retrying"
+            sleep $((attempt * 5))
+          done
+          exit 1

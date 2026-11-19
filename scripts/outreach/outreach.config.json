@@ -1,0 +1,21 @@
+{
+  "sender": "",
+  "send_as": [],
+  "alert_to": "",
+  "timezone": "UTC",
+  "paused": false,
+  "caps": {
+    "max_new_per_day": 10,
+    "max_followups_per_day": 10,
+    "max_total_per_day": 20,
+    "max_per_domain_per_day": 1
+  },
+  "signature": {
+    "name": "",
+    "role": "",
+    "closing": "Best regards,",
+    "photo_url": "",
+    "links": []
+  },
+  "extra_banned_phrases": []
+}

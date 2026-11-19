@@ -9,7 +9,7 @@ Turns "X is due <when>" into a conflict-checked event with the right reminders i
 
 **Autonomy:** act-with-approval. The user names the deliverable and the date; the skill creates the event. It never invents deadlines.
 
-**No calendar connector?** Check `connections.md` and the available tools. If none exists, say so, add the deadline as a task with a `deadline:` in `tasks.yaml` (so the dashboard counts it down), and stop.
+**No calendar connector?** Check `connections.md` and the available tools. If none exists, say so, add the deadline as an open task with its date in the project's `CONTEXT.md` under `## Next` (`- [ ] <deliverable> (due YYYY-MM-DD)`, so the morning brief and the janitor see it), and stop.
 
 ## Step 0: Load the reminder defaults
 
