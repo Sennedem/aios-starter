@@ -28,7 +28,7 @@ The work is done by `scripts/update-aios.mjs`. Do not re-derive its logic by han
 3. **Explain it in plain words.** Group by what the user will notice: "two new skills (`/x`: what it does), the morning brief got a fix for timezones, 14 new wiki pages in the core pack, one rule you edited and the starter also changed". For anything in the merge group, say what the starter changed. Read the starter's version (`git show <upstream ref>:<path>`) for anything you describe; never guess from the file name.
 4. **Ask.** "Apply all, pick some, or skip?" Use the choice tool. Nothing is applied without a yes.
 5. **Apply.** `node scripts/update-aios.mjs --apply`, or `--apply --only <path> ...` for a subset.
-6. **Conflicts.** For each file the script lists as needing the user: open the merged text in `tmp/update-aios/<path>`, show the conflicting part next to what each side wanted, and propose a resolution. Write it into the real file only on the user's yes, then rerun `--apply` so the sync point advances.
+6. **Conflicts.** For each file the script lists as needing the user: open the merged text in `tmp/update-aios/<path>`, show the conflicting part next to what each side wanted, and propose a resolution. Write it into the real file only on the user's yes. When every conflict is settled, run `node scripts/update-aios.mjs --resolved`: it records the starter commit as the new sync point, so settled files stop showing as conflicts.
 7. **Check.**
    - `node scripts/brain-janitor.mjs --local`: zero broken links.
    - `node scripts/doctor.mjs`.
